@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="fil">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Happy 6th Monthsary! 💗</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=Lora:ital@1&family=Dancing+Script:wght@600&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  
+  html, body {
+    background: radial-gradient(circle at 50% 50%, #091026 0%, #02040a 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto; 
+    -webkit-overflow-scrolling: touch;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Fixed Canvas */
+  canvas {
+    position: fixed; inset: 0; pointer-events: none; z-index: 1;
+  }
+
+  /* ============ MUSIC BUTTON ============ */
+  #music-btn {
+    position: fixed; top: 20px; right: 20px; z-index: 100;
+    background: rgba(8, 18, 40, 0.6); border: 1px solid rgba(120, 180, 255, 0.35);
+    color: #a4c6f0; width: 45px; height: 45px; border-radius: 50%;
+    font-size: 20px; cursor: pointer; backdrop-filter: blur(10px);
+    display: grid; place-items: center; transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  }
+  #music-btn:hover { background: rgba(60, 140, 255, 0.3); transform: scale(1.05); }
+  #music-btn.playing { color: #fff; border-color: #6da8e8; box-shadow: 0 0 15px rgba(109, 168, 232, 0.5); }
+
+  /* ============ ENVELOPE ============ */
+  #stage { 
+    position: fixed; inset: 0; z-index: 20; 
+    display: grid; place-items: center; pointer-events: none;
+  }
+  #env-wrap {
+    position: relative; perspective: 1400px; perspective-origin: 50% 55%;
+    cursor: pointer; pointer-events: auto; 
+    transition: opacity .6s ease, transform .6s ease;
+  }
+  #env-wrap::before {
+    content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 500px; height: 500px; background: radial-gradient(circle, rgba(70,150,255,.35), transparent 60%);
+    pointer-events: none; animation: pulse 3s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: .6; transform: translate(-50%,-50%) scale(1); }
+    50%     { opacity: 1;  transform: translate(-50%,-50%) scale(1.15); }
+  }
+  #env-wrap.hide { opacity: 0; transform: scale(0.4); pointer-events: none; }
+
+  #envelope {
+    position: relative; width: 300px; height: 200px; transform-style: preserve-3d;
+    animation: floatEnv 4s ease-in-out infinite;
+  }
+  @keyframes floatEnv {
+    0%,100% { transform: translateY(0) rotate(-1deg); }
+    50%     { transform: translateY(-10px) rotate(1deg); }
+  }
+  .env-body {
+    position: absolute; inset: 0; background: linear-gradient(160deg, #2a4b8c 0%, #162d59 55%, #0d1c3d 100%);
+    border-radius: 10px; box-shadow: 0 20px 50px rgba(0,0,0,.8), inset 0 0 0 1px rgba(130,190,255,.2), inset 0 -40px 60px rgba(0,0,0,.4);
+    overflow: hidden;
+  }
+  .env-flap {
+    position: absolute; top: 0; left: 0; right: 0; height: 52%;
+    background: linear-gradient(180deg, #3d68b8 0%, #1f3d7a 100%);
+    clip-path: polygon(0 0, 100% 0, 50% 100%); transform-origin: top center;
+    transform: rotateX(0deg); transition: transform 0.8s cubic-bezier(.55,0,.25,1); z-index: 3;
+  }
+  #envelope.open .env-flap { transform: rotateX(-178deg); }
+  
+  .env-seal {
+    position: absolute; top: 47%; left: 50%; transform: translate(-50%,-50%);
+    width: 60px; height: 60px;
+    background-image: url('seal.png'); background-size: contain; background-repeat: no-repeat; background-position: center;
+    z-index: 4; transition: opacity .3s ease, transform .3s ease;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,.6));
+  }
+  #envelope.open .env-seal { opacity: 0; transform: translate(-50%,-50%) scale(1.8) rotate(-20deg); }
+
+  /* ============ MAHABANG LIHAM ============ */
+  #scroll-container {
+    position: absolute;
+    top: 0; left: 0; width: 100%;
+    min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+    padding: 60px 20px 100px 20px; 
+    opacity: 0; pointer-events: none;
+    transition: opacity 1.2s ease, transform 1.2s ease;
+    z-index: 10;
+  }
+  #scroll-container.show {
+    opacity: 1; pointer-events: auto;
+  }
+  #scroll-container.hide {
+    opacity: 0; pointer-events: none; transform: translateY(-50px);
+  }
+
+  #letter-wrapper {
+    position: relative;
+    width: min(90vw, 480px); 
+  }
+
+  .torn-blue-bg {
+    position: absolute; inset: 8px;
+    background: #1a3a70;
+    border-radius: 8px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 40px rgba(60,140,255,0.3);
+  }
+
+  #letter-card {
+    position: relative;
+    margin: 15px;
+    background-color: #0b132b; 
+    background-image: 
+      radial-gradient(1.5px 1.5px at 20px 30px, rgba(255,255,255,0.8), transparent),
+      radial-gradient(1.5px 1.5px at 40px 70px, rgba(255,255,255,0.9), transparent),
+      radial-gradient(2px 2px at 90px 40px, rgba(159,216,255,0.9), transparent),
+      radial-gradient(1px 1px at 160px 120px, rgba(255,255,255,0.7), transparent),
+      radial-gradient(1px 1px at 230px 80px, rgba(255,255,255,0.8), transparent),
+      linear-gradient(135deg, #091026 0%, #13274f 100%);
+    background-repeat: repeat;
+    background-size: 250px 250px, 250px 250px, 250px 250px, 250px 250px, 250px 250px, cover;
+    border-radius: 4px;
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.6), 2px 5px 20px rgba(60,140,255,0.4);
+    border: 1px solid rgba(130,190,255,0.2);
+    padding: 100px 0 120px 0; 
+  }
+
+  .design-el { position: absolute; z-index: 0; pointer-events: none; }
+  .corner { width: 70px; opacity: 0.8; filter: brightness(1.5) drop-shadow(0 0 5px rgba(130,190,255,0.5)); }
+  .c-tl { top: 5px; left: 5px; transform: rotate(90deg); }
+  .c-tr { top: 5px; right: 5px; transform: rotate(180deg); }  
+  .c-bl { bottom: 5px; left: 5px; transform: rotate(0deg); }  
+  .c-br { bottom: 5px; right: 5px; transform: rotate(270deg); }
+
+  .vintage-stamp { top: 20px; right: 75px; width: 75px; transform: rotate(6deg); filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); z-index: 1; }
+  .watercolor-rose { bottom: 20px; left: 20px; width: 100px; transform: rotate(-15deg); filter: drop-shadow(0 0 10px rgba(60,140,255,0.4)); z-index: 1; }
+
+  /* POLAROIDS */
+  .polaroid {
+    position: absolute; background: #fff; padding: 10px 10px 40px 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.8), 0 0 15px rgba(255,255,255,0.1);
+    z-index: 15; transition: transform 0.3s ease;
+  }
+  .polaroid img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; background: #1a3a70; border: 1px solid #ddd; }
+  .polaroid::after { content: '♡'; position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); color: #8ba8d4; font-size: 20px; }
+  
+  .p-1 { top: 120px; left: -85px; transform: rotate(-8deg); width: 130px; }
+  .p-2 { bottom: 100px; right: -85px; transform: rotate(6deg); width: 140px; }
+
+  /* TEXT AREA */
+  #letter-content { position: relative; z-index: 3; padding: 0 45px; }
+  #letter-card h1 {
+    font-family: 'Dancing Script', cursive; font-size: 38px; color: #9fd8ff; text-align: center; font-weight: 600;
+    line-height: 1.1; margin-bottom: 5px; margin-top: 10px; 
+    text-shadow: 0 0 10px rgba(159,216,255,0.6), 0 0 20px rgba(159,216,255,0.3);
+  }
+  #letter-card .subtitle {
+    font-family: 'Courier Prime', monospace; font-size: 12px; letter-spacing: 2px; text-align: center;
+    color: #7bb8ff; margin-bottom: 35px; font-weight: bold; text-transform: uppercase; text-shadow: 0 0 5px rgba(123,184,255,0.5);
+  }
+  #letter-card p {
+    font-family: 'Courier Prime', monospace; font-size: 14px; line-height: 1.9; color: #d0e4ff;
+    text-align: justify; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); white-space: pre-wrap;
+  }
+  #letter-card .sig {
+    font-family: 'Dancing Script', cursive; margin-top: 40px; margin-bottom: 20px; text-align: right; font-size: 34px; color: #9fd8ff;
+    text-shadow: 0 0 10px rgba(159,216,255,0.6);
+  }
+  
+  /* "THERE'S MORE" BUTTON */
+  #btn-more {
+    display: block; margin: 30px auto 0 auto; padding: 12px 30px;
+    background: rgba(159, 216, 255, 0.15); color: #9fd8ff; 
+    border: 1px solid rgba(159, 216, 255, 0.6); border-radius: 30px;
+    font-size: 14px; font-family: 'Courier Prime', monospace; letter-spacing: 2px; 
+    cursor: pointer; transition: all .3s ease;
+    position: relative; z-index: 4; box-shadow: 0 0 15px rgba(159,216,255,0.3);
+    text-transform: uppercase; font-weight: bold;
+  }
+  #btn-more:hover { 
+    background: #9fd8ff; color: #0b132b; 
+    box-shadow: 0 0 30px rgba(159,216,255,0.8); transform: scale(1.05);
+  }
+
+  /* ============ ENDING SECTION ============ */
+  #ending-section {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    z-index: 30;
+    opacity: 0; pointer-events: none;
+    transition: opacity 2s ease;
+    text-align: center;
+    padding: 20px;
+  }
+  #ending-section.show {
+    opacity: 1; pointer-events: auto;
+  }
+  #ending-content {
+    transform: translateY(20px) scale(0.9);
+    transition: transform 1.5s cubic-bezier(.2,.9,.3,1.1);
+    background: rgba(11, 19, 43, 0.6);
+    backdrop-filter: blur(8px);
+    padding: 40px 30px;
+    border-radius: 20px;
+    border: 1px solid rgba(130,190,255,0.2);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+  }
+  #ending-section.show #ending-content {
+    transform: translateY(0) scale(1);
+  }
+  #ending-section h2 {
+    font-family: 'Dancing Script', cursive;
+    font-size: 50px;
+    color: #9fd8ff;
+    text-shadow: 0 0 20px rgba(159,216,255,0.8), 0 0 40px rgba(159,216,255,0.4);
+    margin-bottom: 10px;
+  }
+  #ending-section p {
+    font-family: 'Courier Prime', monospace;
+    font-size: 16px;
+    color: #d0e4ff;
+    line-height: 1.8;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
+    margin-bottom: 30px;
+  }
+  #btn-replay-ending {
+    padding: 10px 25px;
+    background: rgba(159, 216, 255, 0.1); color: #9fd8ff;
+    border: 1px solid rgba(159, 216, 255, 0.5); border-radius: 4px;
+    font-size: 13px; font-family: 'Courier Prime', monospace; letter-spacing: 1px;
+    cursor: pointer; transition: all .2s ease;
+  }
+  #btn-replay-ending:hover { background: #9fd8ff; color: #0b132b; }
+
+  #hint {
+    position: fixed; bottom: 30px; left: 0; right: 0; text-align: center;
+    color: #6da8e8; font-size: 14px; letter-spacing: .5px; opacity: .9;
+    pointer-events: none; transition: opacity .5s ease; z-index: 6; font-family: sans-serif;
+  }
+  #hint.hide { opacity: 0; }
+
+  /* MOBILE */
+  @media (max-width: 480px) {
+    #scroll-container { padding: 40px 10px 60px 10px; }
+    #letter-wrapper { width: 95vw; }
+    #letter-card { padding: 90px 0 100px 0; }
+    #letter-content { padding: 0 25px; }
+    
+    #letter-card h1 { font-size: 30px; }
+    #letter-card p { font-size: 13px; line-height: 1.8; }
+    
+    .corner { width: 45px; }
+    .vintage-stamp { width: 60px; right: 40px; top: 15px; }
+    .watercolor-rose { width: 80px; bottom: 15px; left: 15px; }
+    
+    .polaroid { padding: 6px 6px 25px 6px; }
+    .polaroid img { aspect-ratio: 3 / 4; }
+    
+    .p-1 { width: 100px; left: -40px; top: 100px; }
+    .p-2 { width: 110px; right: -40px; bottom: 100px; }
+
+    #ending-section h2 { font-size: 40px; }
+    #ending-section p { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+  <audio id="bg-music" loop>
+    <source src="love.mp4" type="audio/mp4">
+  </audio>
+  
+  <button id="music-btn" title="I-toggle ang musika">🔇</button>
+
+  <div id="stage">
+    <div id="env-wrap">
+      <div id="envelope">
+        <div class="env-body"></div>
+        <div class="env-flap"></div>
+        <div class="env-seal"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="scroll-container">
+    <div id="letter-wrapper">
+      
+      <div class="polaroid p-1">
+        <img src="pic1.jpg" alt="Memory 1" onerror="this.style.background='#1a3a70'; this.style.display='none'">
+      </div>
+
+      <div class="torn-blue-bg"></div>
+      <div id="letter-card">
+        
+        <img src="corner.png" class="design-el corner c-tl" onerror="this.style.display='none'">
+        <img src="corner.png" class="design-el corner c-tr" onerror="this.style.display='none'">
+        <img src="stamp.png" class="design-el vintage-stamp" onerror="this.style.display='none'">
+
+        <div id="letter-content">
+          <h1>Happy 6th Monthsary!</h1>
+          <div class="subtitle">To my gorgeous wife</div>
+          
+          <p id="full-message"></p>
+          
+          <div class="sig">I LOVE LOVE YOUU SOOO VERY MUCH! ♡</div>
+          
+          <!-- BAGONG BUTTON -->
+          <button id="btn-more">There's more... ✨</button>
+        </div>
+
+        <img src="corner.png" class="design-el corner c-bl" onerror="this.style.display='none'">
+        <img src="corner.png" class="design-el corner c-br" onerror="this.style.display='none'">
+        <img src="rose.png" class="design-el watercolor-rose" onerror="this.style.display='none'">
+      </div>
+
+      <div class="polaroid p-2">
+        <img src="pic2.jpg" alt="Memory 2" onerror="this.style.background='#1a3a70'; this.style.display='none'">
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ENDING SECTION (FULL SCREEN OVERLAY) -->
+  <div id="ending-section">
+    <div id="ending-content">
+      <h2>Forever & Always</h2>
+      <p>Six months down. A lifetime to go.<br>You are my greatest blessing and my forever.</p>
+      <button id="btn-replay-ending">Bumalik sa umpisa</button>
+    </div>
+  </div>
+
+  <div id="hint">pindutin ang liham 🌌</div>
+  <canvas id="fx"></canvas>
+
+<script>
+(() => {
+  'use strict';
+
+  const MESSAGE = `HAPPY 6th Monthsary, MY BABYYYY!! 💗\n\nMy pretty, cutie, sweet babyyy!! Maraming salamat talaga babyyy, sa 6 months natin na magkasama. Thank you for being part of my life and for giving me so many memories na hanggang ngayon ay sobrang special sa akin. Sobrang saya ko na umabot na tayo ng six months, and I hope na marami pa tayong monthsary na ise-celebrate together.\n\nAlam mo ba babyyy? I'm really grateful na dumating ka sa buhay ko. You came into my life, and somehow, so many things started to change. Hindi lang sa sarili ko, but even in my everyday life. Yung mga bagay na dati ay hindi ko masyadong pinapansin, unti-unti kong natutunang pag-isipan. I started looking at things differently, correcting my way of thinking, and becoming more mindful of my actions and decisions. I found myself wanting to improve, to become more patient, understanding, and mature. And one of the reasons behind that is because of you.\n\nYou inspired me to become a better version of myself babyyy. Not because you asked me to change, but because your presence made me realize that there are still so many things I can improve about myself. I wanted to grow, not just for the sake of our relationship, but also for myself. Gusto kong matutunang maging better sa paraan ng pag-iisip ko, sa pag-handle ng emotions ko, sa pag-understand sa mga tao, and even in the little things I do every day. I may still have a lot to learn and improve, but I'm genuinely happy that I've started making those changes.\n\nAnd I want to thank you for that. Thank you for unknowingly becoming one of my inspirations. You might not even realize how much of an impact you've had on me, but I hope you know that your presence has made a difference in my life. I'm thankful that our paths crossed and that I got the chance to know someone like you. Out of all the people I could have met, I'm glad that I got to meet you.\n\nI also want you to know how much I appreciate the little things about you. they mean so much to me. Sometimes, hindi mo siguro napapansin, pero those little things can easily make my day better. I love getting to know more about you, understanding the things you like, listening to your stories, and discovering even the smallest things about you.\n\nHindi naman laging happy and easy ang lahat. We've had difficult moments, misunderstandings, and times na hindi natin agad nagkakaintindihan. But I believe that there's always something we can learn from every experience. I know I still have things to work on, and I don't want to stop growing as a person. I want to keep learning how to communicate better, understand you better, and become someone who knows how to love with more patience, care, and understanding.\n\nThank you for all the happiness you've brought into my life babyyy. Thank you for making me smile kahit sa simpleng bagay lang, for sharing your little stories with me, and for allowing me to be part of your everyday life. I hope I make you feel appreciated and loved too, even through my little efforts and simple ways of showing how much you mean to me.\n\nI hope you never forget how special you are to me. I may not always find the perfect words to express everything I feel, but please know that I'm genuinely happy and thankful that you became part of my story. Whatever challenges life may bring, I'll always be grateful for the memories we've created and for the person I've become through the experiences we've shared.\n\nHappy 6th monthsary again my pretty cutie sweet babyyy!! Six months down, and there are still so many things I want to experience, places I want to see, memories I want to make, and stories I want to share with you.\n\nThank you for coming into my life, babyyy. Thank you for being you. And thank you for making these six months something worth remembering.\n\nI LOVE LOVE YOUU SOOO VERY MUCH MY BABYYYYYYY!!!`;
+
+  const textEl = document.getElementById('full-message');
+  textEl.innerHTML = MESSAGE.replace(/\n/g, '<br><br>');
+
+  const IMAGE_SOURCES = ['1.png', '2.png', '3.png', '4.png'];
+  
+  const svgRose = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#1a4a9e"/><circle cx="50" cy="50" r="38" fill="#2a6be8"/><circle cx="50" cy="50" r="28" fill="#4a90e2"/><circle cx="50" cy="50" r="18" fill="#7bb8ff"/><circle cx="50" cy="50" r="8" fill="#e0f0ff"/></svg>`;
+  const svgPeony = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><g fill="#4a90e2"><circle cx="50" cy="25" r="25"/><circle cx="25" cy="50" r="25"/><circle cx="75" cy="50" r="25"/><circle cx="50" cy="75" r="25"/><circle cx="50" cy="50" r="25"/></g><g fill="#80bfff"><circle cx="50" cy="35" r="15"/><circle cx="35" cy="50" r="15"/><circle cx="65" cy="50" r="15"/><circle cx="50" cy="65" r="15"/></g><circle cx="50" cy="50" r="8" fill="#fff"/></svg>`;
+  const svgDaisy = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><g fill="#5a9eff">${Array.from({length:16}).map((_,i)=>`<ellipse cx="50" cy="20" rx="6" ry="22" transform="rotate(${i*22.5} 50 50)" />`).join('')}</g><circle cx="50" cy="50" r="12" fill="#e0f0ff"/></svg>`;
+  const svgAnemone = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><g fill="#4d7dff">${Array.from({length:8}).map((_,i)=>`<path d="M50 50 Q70 15 50 5 Q30 15 50 50" transform="rotate(${i*45} 50 50)"/>`).join('')}</g><circle cx="50" cy="50" r="10" fill="#0d2b66"/></svg>`;
+  const FALLBACK_SVGS = [
+    'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgRose),
+    'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgPeony),
+    'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgDaisy),
+    'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgAnemone)
+  ];
+
+  const flowerImages = new Array(IMAGE_SOURCES.length);
+  let loadedCount = 0;
+
+  IMAGE_SOURCES.forEach((src, index) => {
+    const img = new Image();
+    img.src = src;
+    img.onerror = () => {
+      const fallbackImg = new Image();
+      fallbackImg.src = FALLBACK_SVGS[index];
+      fallbackImg.onload = () => { flowerImages[index] = fallbackImg; loadedCount++; };
+    };
+    img.onload = () => { flowerImages[index] = img; loadedCount++; };
+  });
+
+  const envelope   = document.getElementById('envelope');
+  const envWrap    = document.getElementById('env-wrap');
+  const scrollContainer = document.getElementById('scroll-container');
+  const endingSection = document.getElementById('ending-section');
+  const btnMore    = document.getElementById('btn-more');
+  const btnReplay  = document.getElementById('btn-replay-ending');
+  const hint       = document.getElementById('hint');
+  const canvas     = document.getElementById('fx');
+  const ctx        = canvas.getContext('2d');
+  
+  const bgMusic    = document.getElementById('bg-music');
+  const musicBtn   = document.getElementById('music-btn');
+
+  musicBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (bgMusic.paused) {
+      bgMusic.play().catch(err => console.log("Audio error:", err));
+      musicBtn.textContent = '🎵';
+      musicBtn.classList.add('playing');
+    } else {
+      bgMusic.pause();
+      musicBtn.textContent = '🔇';
+      musicBtn.classList.remove('playing');
+    }
+  });
+
+  const TAU  = Math.PI * 2;
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const pick = a => a[(Math.random() * a.length) | 0];
+  const easeInOutCubic = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3) / 2;
+
+  let W = 0, H = 0, DPR = 1;
+  let stars = [];
+  let shootingStars = [];
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width  = Math.floor(W * DPR); canvas.height = Math.floor(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    initStars();
+  }
+  window.addEventListener('resize', resize);
+
+  function initStars() {
+    stars = [];
+    for(let i = 0; i < 120; i++) {
+      stars.push({
+        x: rand(0, W), y: rand(0, H), radius: rand(0.5, 1.8),
+        alpha: rand(0.1, 0.8), speed: rand(0.01, 0.04), dir: Math.random() > 0.5 ? 1 : -1
+      });
+    }
+  }
+  
+  function spawnShootingStar() {
+    shootingStars.push({
+      x: rand(W * 0.3, W), y: rand(-100, H * 0.3),
+      vx: rand(-8, -4), vy: rand(4, 8),
+      length: rand(80, 150), life: 1, decay: rand(0.005, 0.015)
+    });
+    setTimeout(spawnShootingStar, rand(2000, 5000));
+  }
+
+  resize();
+  setTimeout(spawnShootingStar, 1000);
+
+  /* ==============================================
+     ENDING ANIMATION LOGIC (Flower Heart & Fireworks)
+  ============================================== */
+  let endingParticles = [];
+  let isEndingActive = false;
+  let fireworkTimer = null;
+
+  function startEndingAnimation() {
+    isEndingActive = true;
+    endingParticles = [];
+    
+    const centerX = W / 2;
+    const centerY = H / 2;
+    const particleCount = 120;
+    const scale = Math.min(W, H) * 0.015;
+
+    // 1. Create Spiral-to-Heart particles
+    for (let i = 0; i < particleCount; i++) {
+      const t = (i / particleCount) * TAU;
+      const hx = 16 * Math.pow(Math.sin(t), 3);
+      const hy = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+      
+      endingParticles.push({
+        img: pick(flowerImages),
+        x: centerX, y: centerY,
+        targetX: centerX + hx * scale,
+        targetY: centerY + hy * scale,
+        age: 0,
+        delay: i * 0.015,
+        speed: rand(2, 5),
+        angle: rand(0, TAU),
+        spiralRadius: 0,
+        phase: 'spiral',
+        scale: rand(0.08, 0.15), // Maliit na bulaklak para maging heart
+        rot: rand(0, TAU),
+        spin: rand(-2, 2)
+      });
+    }
+
+    // 2. Start Fireworks every 800ms
+    fireworkTimer = setInterval(() => {
+      spawnFlowerFirework();
+    }, 800);
+  }
+
+  function spawnFlowerFirework() {
+    const startX = rand(W * 0.2, W * 0.8);
+    const startY = rand(H * 0.2, H * 0.6);
+    const count = 15;
+
+    for (let i = 0; i < count; i++) {
+      const angle = rand(0, TAU);
+      const speed = rand(100, 400);
+      endingParticles.push({
+        img: pick(flowerImages),
+        x: startX, y: startY,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        age: 0,
+        phase: 'firework',
+        scale: rand(0.05, 0.12), 
+        rot: rand(0, TAU),
+        spin: rand(-5, 5)
+      });
+    }
+  }
+
+  /* ==============================================
+     MAIN ANIMATION LOOP
+  ============================================== */
+  const T_BURST  = 0.6;
+  const T_SETTLE = 1.4;
+
+  let flowers = [];
+  let last = performance.now();
+  let animating   = false;
+  let isFalling   = false; 
+
+  function spawnBurst(mx, my, layerIndex) {
+    const TOTAL_LAYERS = 18;
+    const baseScale = 0.2 + (layerIndex / TOTAL_LAYERS) * 1.8; 
+    const count = 35; 
+
+    for (let i = 0; i < count; i++) {
+      const angle = rand(0, TAU);
+      const speed = rand(200, 700);
+      const targetAngle = rand(0, TAU);
+      const maxRadius = Math.max(W, H) * 0.85; 
+      const targetRadius = Math.sqrt(Math.random()) * maxRadius; 
+      
+      const tx = (W / 2) + Math.cos(targetAngle) * targetRadius;
+      const ty = (H / 2) + Math.sin(targetAngle) * targetRadius;
+      const selectedImg = pick(flowerImages);
+      const finalScale = baseScale * rand(0.8, 1.2);
+
+      flowers.push({
+        x: mx, y: my, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+        sx: 0, sy: 0, tx, ty, midX: 0, midY: 0, baseX: 0, baseY: 0,
+        scale: finalScale, rot: rand(0, TAU), spin: rand(-1.5, 1.5),
+        spriteImg: selectedImg, phase: 'burst', age: 0, swayPhase: rand(0, TAU), fallVy: 0
+      });
+    }
+
+    for (let i = 0; i < 15; i++) {
+      flowers.push({
+        x: mx, y: my, vx: rand(-1000, 1000), vy: rand(-1000, 1000),
+        life: 1, isSpark: true, size: rand(1, 3), phase: 'burst', age: 0
+      });
+    }
+  }
+
+  function loop(now) {
+    const dt = Math.min((now - last) / 1000, 0.05);
+    last = now;
+    ctx.clearRect(0, 0, W, H);
+
+    // 1. Stars & Shooting Stars
+    stars.forEach(s => {
+      s.alpha += s.speed * s.dir;
+      if(s.alpha > 1) { s.alpha = 1; s.dir = -1; }
+      if(s.alpha < 0.1) { s.alpha = 0.1; s.dir = 1; }
+      ctx.fillStyle = `rgba(200, 230, 255, ${s.alpha})`;
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.radius, 0, TAU); ctx.fill();
+    });
+
+    for(let i = shootingStars.length - 1; i >= 0; i--) {
+      let ss = shootingStars[i];
+      ss.x += ss.vx * dt * 60; ss.y += ss.vy * dt * 60; ss.life -= ss.decay * dt * 60;
+      if(ss.life <= 0 || ss.y > H + 100 || ss.x < -100) { shootingStars.splice(i, 1); continue; }
+      let tailX = ss.x - ss.vx * (ss.length / 10); let tailY = ss.y - ss.vy * (ss.length / 10);
+      let grad = ctx.createLinearGradient(ss.x, ss.y, tailX, tailY);
+      grad.addColorStop(0, `rgba(255, 255, 255, ${ss.life})`);
+      grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.strokeStyle = grad; ctx.lineWidth = 2; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(ss.x, ss.y); ctx.lineTo(tailX, tailY); ctx.stroke();
+    }
+
+    // 2. Ending Particles (Spiral Heart & Fireworks)
+    if (isEndingActive) {
+      for (let i = endingParticles.length - 1; i >= 0; i--) {
+        const p = endingParticles[i];
+        p.age += dt;
+        p.rot += p.spin * dt;
+
+        if (p.phase === 'firework') {
+          const drag = Math.pow(0.95, dt * 60);
+          p.vx *= drag; p.vy *= drag; p.vy += 100 * dt; // Gravity
+          p.x += p.vx * dt; p.y += p.vy * dt;
+          
+          let alpha = 1 - (p.age / 3); // Fade out after 3s
+          if (alpha <= 0) { endingParticles.splice(i, 1); continue; }
+
+          if (p.img && p.img.complete) {
+            ctx.save(); ctx.globalAlpha = alpha;
+            ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+            const size = 256 * p.scale;
+            ctx.drawImage(p.img, -size/2, -size/2, size, size);
+            ctx.restore();
+          }
+        } 
+        else if (p.phase === 'spiral' || p.phase === 'heart') {
+          if (p.age > p.delay) {
+            if (p.phase === 'spiral') {
+              p.spiralRadius += p.speed * dt * 60;
+              p.angle += 0.1 * dt * 60;
+              p.x = W/2 + Math.cos(p.angle) * p.spiralRadius;
+              p.y = H/2 + Math.sin(p.angle) * p.spiralRadius;
+              
+              if (p.age > 1.5) p.phase = 'heart';
+            } else {
+              p.x += (p.targetX - p.x) * 0.05;
+              p.y += (p.targetY - p.y) * 0.05;
+            }
+
+            if (p.img && p.img.complete) {
+              ctx.save(); ctx.globalAlpha = Math.min(1, p.age); // Fade in
+              ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+              const size = 256 * p.scale;
+              ctx.drawImage(p.img, -size/2, -size/2, size, size);
+              ctx.restore();
+            }
+          }
+        }
+      }
+    }
+
+    // 3. Letter Flowers (Only if not ending)
+    if (!isEndingActive) {
+      flowers.sort((a, b) => (a.scale || 1) - (b.scale || 1));
+      for (let i = flowers.length - 1; i >= 0; i--) {
+        const f = flowers[i];
+        f.age += dt;
+
+        if (f.isSpark) {
+          f.x += f.vx * dt; f.y += f.vy * dt; f.life -= dt * 1.5;
+          if (f.life <= 0) { flowers.splice(i, 1); continue; }
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.fillStyle = `rgba(150, 220, 255, ${f.life})`;
+          ctx.beginPath(); ctx.arc(f.x, f.y, f.size, 0, TAU); ctx.fill();
+          ctx.globalCompositeOperation = 'source-over';
+          continue;
+        }
+
+        if (f.phase === 'burst') {
+          const drag = Math.pow(0.05, dt);
+          f.vx *= drag; f.vy *= drag; f.x += f.vx * dt; f.y += f.vy * dt; f.rot += f.spin * dt;
+          if (f.age >= T_BURST) {
+            f.phase = 'settle'; f.age = 0; f.sx = f.x; f.sy = f.y;
+            f.midX = (f.sx + f.tx) / 2 + rand(-200, 200);
+            f.midY = (f.sy + f.ty) / 2 + rand(-200, 200);
+          }
+        } 
+        else if (f.phase === 'settle') {
+          const t = Math.min(f.age / T_SETTLE, 1);
+          const e = easeInOutCubic(t);
+          f.x = Math.pow(1-t, 2) * f.sx + 2 * (1-t) * t * f.midX + Math.pow(t, 2) * f.tx;
+          f.y = Math.pow(1-t, 2) * f.sy + 2 * (1-t) * t * f.midY + Math.pow(t, 2) * f.ty;
+          f.rot += f.spin * dt;
+          if (t >= 1) { f.phase = 'hold'; f.age = 0; f.baseX = f.tx; f.baseY = f.ty; }
+        } 
+        else if (f.phase === 'hold') {
+          if (!isFalling) {
+            f.x = f.baseX + Math.cos(now / 1000 + f.swayPhase) * 12;
+            f.y = f.baseY + Math.sin(now / 1100 + f.swayPhase) * 12;
+            f.rot += TAU * 0.20 * dt; 
+          } else {
+            f.phase = 'fall'; f.fallVy = rand(-100, 100); 
+          }
+        }
+        else if (f.phase === 'fall') {
+          f.fallVy += 1200 * dt; f.y += f.fallVy * dt;
+          f.x += Math.sin(now / 500 + f.swayPhase) * 60 * dt;
+          f.rot += TAU * 0.20 * dt; 
+          if (f.y > H + 200) { flowers.splice(i, 1); continue; }
+        }
+
+        if (f.spriteImg) {
+          ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.rot);
+          const drawSize = 256 * f.scale;
+          ctx.drawImage(f.spriteImg, -drawSize/2, -drawSize/2, drawSize, drawSize);
+          ctx.restore();
+        }
+      }
+    }
+    
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  /* ==============================================
+     INTERACTIONS
+  ============================================== */
+  function openEnvelope() {
+    if (animating || loadedCount === 0) return; 
+    animating = true;
+    isFalling = false;
+    hint.classList.add('hide');
+
+    if (bgMusic.paused) {
+      bgMusic.play().catch(e => console.log("Audio autoplay blocked", e));
+      musicBtn.textContent = '🎵';
+      musicBtn.classList.add('playing');
+    }
+
+    envelope.classList.add('open');
+
+    const r  = envelope.getBoundingClientRect();
+    const mx = r.left + r.width / 2;
+    const my = r.top  + r.height * 0.40;
+
+    setTimeout(() => {
+      envWrap.classList.add('hide');
+
+      let layer = 0;
+      const totalLayers = 18;
+      const burstInterval = 80; 
+
+      const burstTimer = setInterval(() => {
+        spawnBurst(mx, my, layer);
+        layer++;
+        
+        if (layer >= totalLayers) {
+          clearInterval(burstTimer);
+          
+          const waitForSettle = 2000; 
+          const holdTime = 2500; 
+          
+          setTimeout(() => {
+            isFalling = true;
+            window.scrollTo(0, 0); 
+            scrollContainer.classList.add('show');
+          }, waitForSettle + holdTime);
+        }
+      }, burstInterval); 
+
+    }, 400); 
+  }
+
+  envWrap.addEventListener('pointerdown', openEnvelope);
+
+  // When "There's more..." is clicked
+  btnMore.addEventListener('click', () => {
+    scrollContainer.classList.add('hide');
+    scrollContainer.classList.remove('show');
+    
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      endingSection.classList.add('show');
+      startEndingAnimation();
+    }, 800); // Wait for fade out before showing ending
+  });
+
+  // When "Bumalik sa umpisa" is clicked
+  btnReplay.addEventListener('click', () => {
+    endingSection.classList.remove('show');
+    isEndingActive = false;
+    clearInterval(fireworkTimer);
+    
+    setTimeout(() => {
+      flowers = []; 
+      endingParticles = [];
+      animating = false;
+      isFalling = false;
+      
+      envelope.classList.remove('open');
+      envWrap.classList.remove('hide');
+      hint.classList.remove('hide');
+      
+      window.scrollTo(0, 0);
+    }, 1000);
+  });
+
+})();
+</script>
+</body>
+</html>
